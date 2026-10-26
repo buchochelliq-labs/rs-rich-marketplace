@@ -60,7 +60,24 @@ prints its `cargo add` line instead.
    (rs-rich's own packages) are set by a maintainer: the check refuses a
    tier that is set or raised until a maintainer labels the pull request
    `tier-approved`.
-5. **After the merge** the signing workflow rebuilds `index.json`, bumps
+5. **Names.** Users can always tell rs-rich's own packages: only they
+   are `official`, and a listing that is not may not pass for one. The
+   check refuses, in a listing that is new or renamed:
+   - a reserved id: `rs-rich…`, `rich-…`, `richcli…`, `official…`, `rich`
+     or `rs` (separators ignored);
+   - an id that looks like an official one: the same once `-`, `_` and `.`
+     are dropped, or one letter added, removed or changed (`textcase2`,
+     `text-case`, `wordp1ay`), for official ids of four characters or
+     more;
+   - an id that is not ASCII (`textcаse`, with a Cyrillic а), which the
+     schema refuses too;
+   - "official" or "rs-rich" in its name, or "official" in its
+     description, in any case and with any separators.
+
+   A genuine case ("an unofficial port of …", an id that only happens to
+   be close) gets a maintainer's `name-approved` label on the pull
+   request, which lifts this check for it.
+6. **After the merge** the signing workflow rebuilds `index.json`, bumps
    its serial, and signs it once the maintainer approves the run. Until
    then the listing is in the repository but not in the index `rich` reads.
 
@@ -160,6 +177,8 @@ post are counted, once a night.
    branch), and none of this needs the signing environment.
 5. **Run "Publish artifacts"** once by hand if release-hosted versions were
    merged before this workflow existed.
+6. **Create the `name-approved` label** (Issues > Labels), beside
+   `tier-approved`: it lets a pull request through the name check above.
 
 GitHub pauses scheduled workflows in a repository with no activity for 60
 days; re-enable "Stats" under Actions if that happens.

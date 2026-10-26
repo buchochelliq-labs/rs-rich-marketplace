@@ -27,6 +27,21 @@ version that `--base` (a Git revision) does not list, or lists differently
   or whose tier rises, is refused unless `--allow-tier` is given (the
   workflow passes it when a maintainer labels the pull request
   `tier-approved`). With `--all` there is no base, and no tier check.
+- **Names that pass for ours.** A listing that is not `official`, when it
+  is new or its id, name or description changes, may not:
+  - use a reserved id: one starting with `rs-rich`, `rich-`, `richcli` or
+    `official` (ignoring `-`, `_` and `.`, except in `rich-`), or `rich` or
+    `rs`;
+  - say "official" or "rs-rich" in its name, or "official" in its
+    description, in any case and ignoring separators ("by rs-rich" too);
+  - look like an official package's id: after dropping `-`, `_` and `.`,
+    equal to one, or (for an official id of 4 characters or more) one
+    insertion, deletion or substitution away (`textcase2`, `text-case`,
+    `wordp1ay`);
+  - use anything but ASCII in its id (`textcаse` with a Cyrillic а).
+  `--allow-names` lifts these (the workflow passes it when a maintainer
+  labels the pull request `name-approved`), for genuine cases such as an
+  "unofficial" port.
 
 `--mirror DIR` writes each checked artifact to `DIR/HOST/PATH`, the layout a
 local marketplace serves to `rich plugin install`; `--installs FILE` writes
@@ -51,6 +66,89 @@ import marketplace_common as common  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 TIERS = {"community": 0, "reviewed": 1, "official": 2}
+RESERVED_PREFIXES = ("rsrich", "richcli", "official")
+RESERVED_IDS = {"rich", "rs"}
+SEPARATORS = "-_."
+
+
+def squeeze(text: str) -> str:
+    """Lowercase, letters and digits only: what a name says, whatever its
+    case and separators."""
+    return "".join(c for c in text.lower() if c.isalnum())
+
+
+def plain_id(listing_id: str) -> str:
+    return "".join(c for c in listing_id.lower() if c not in SEPARATORS)
+
+
+def within_one_edit(a: str, b: str) -> bool:
+    """Whether `a` becomes `b` with at most one insertion, deletion or
+    substitution."""
+    if abs(len(a) - len(b)) > 1:
+        return False
+    if len(a) > len(b):
+        a, b = b, a
+    i = j = edits = 0
+    while i < len(a) and j < len(b):
+        if a[i] == b[j]:
+            i += 1
+            j += 1
+            continue
+        edits += 1
+        if edits > 1:
+            return False
+        if len(a) == len(b):
+            i += 1
+        j += 1
+    return edits + (len(b) - j) + (len(a) - i) <= 1
+
+
+def name_problems(listing: dict, official_ids) -> list:
+    """Why a listing that is not official could pass for one of ours."""
+    problems = []
+    listing_id = str(listing.get("id", ""))
+    if not listing_id.isascii():
+        problems.append(f"the id {listing_id!r} must be ASCII")
+    plain = plain_id(listing_id)
+    if (plain in RESERVED_IDS or plain.startswith(RESERVED_PREFIXES)
+            or listing_id.lower().startswith("rich-")):
+        problems.append(f"the id {listing_id!r} is reserved for rs-rich's own packages "
+                        "(rs-rich*, rich-*, richcli*, official*, rich, rs)")
+    for official in sorted(official_ids):
+        if official == listing_id:
+            continue
+        target = plain_id(official)
+        if plain == target or (len(target) >= 4 and within_one_edit(plain, target)):
+            problems.append(f"the id {listing_id!r} looks like the official package "
+                            f"{official!r}")
+    name = squeeze(str(listing.get("name", "")))
+    for word in ("official", "rsrich"):
+        if word in name:
+            problems.append(f"the name {listing.get('name')!r} says {word!r}, which only "
+                            "rs-rich's own packages may")
+    if "official" in squeeze(str(listing.get("description", ""))):
+        problems.append("the description says 'official', which only rs-rich's own packages may")
+    return problems
+
+
+def official_ids(root: Path, base: str | None) -> set:
+    """Every official listing's id, at `base` and in the checkout."""
+    ids = set()
+    for path in (root / "packages").glob("*.json"):
+        try:
+            listing = json.loads(path.read_bytes())
+        except ValueError:
+            continue
+        if listing.get("tier") == "official":
+            ids.add(listing.get("id"))
+    if base is not None:
+        names = subprocess.run(["git", "-C", str(root), "ls-tree", "--name-only", base,
+                                "packages/"], capture_output=True, text=True).stdout.split()
+        for relative in names:
+            old = at_base(root, base, relative)
+            if old and old.get("tier") == "official":
+                ids.add(old.get("id"))
+    return {i for i in ids if isinstance(i, str)}
 MUTABLE = {"yanked", "yank_reason"}
 
 
@@ -80,8 +178,11 @@ def frozen(version: dict) -> dict:
 
 
 class Checker:
-    def __init__(self, root: Path, fetcher=common.fetch, crate_entry=common.crate_index_entry):
+    def __init__(self, root: Path, fetcher=common.fetch, crate_entry=common.crate_index_entry,
+                 allow_names: bool = False):
         self.root = root
+        self.allow_names = allow_names
+        self.official_ids = None
         self.fetch = fetcher
         self.crate_entry = crate_entry
         self.errors: list[str] = []
@@ -114,6 +215,16 @@ class Checker:
         if base is not None and new_tier > old_tier and not allow_tier:
             self.error(f"{name}: tier {listing.get('tier')!r} "
                        f"({'raised' if old else 'set'}) needs a maintainer's `tier-approved` label")
+
+        if listing.get("tier") != "official" and not self.allow_names:
+            identity_changed = old is None or any(
+                old.get(key) != listing.get(key) for key in ("id", "name", "description"))
+            if identity_changed:
+                if self.official_ids is None:
+                    self.official_ids = official_ids(self.root, base)
+                for problem in name_problems(listing, self.official_ids):
+                    self.error(f"{name}: {problem}; a maintainer's `name-approved` label "
+                               "allows it")
 
         old_versions = {v["version"]: v for v in old.get("versions", [])} if old else {}
         if old_versions and identity(old) != identity(listing):
@@ -180,12 +291,14 @@ def main(argv=None) -> int:
     group.add_argument("--all", action="store_true", help="check every version")
     parser.add_argument("--allow-tier", action="store_true",
                         help="a maintainer approved setting or raising a tier")
+    parser.add_argument("--allow-names", action="store_true",
+                        help="a maintainer approved a name that looks like rs-rich's own")
     parser.add_argument("--mirror", type=Path, help="write each checked artifact to DIR/HOST/PATH")
     parser.add_argument("--installs", type=Path,
                         help="write ID@VERSION for each checked installable version")
     args = parser.parse_args(argv)
 
-    checker = Checker(args.root)
+    checker = Checker(args.root, allow_names=args.allow_names)
     for path in sorted((args.root / "packages").glob("*.json")):
         try:
             checker.check_listing(path, args.base, args.all, args.allow_tier)

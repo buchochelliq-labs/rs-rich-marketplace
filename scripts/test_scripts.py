@@ -265,6 +265,84 @@ class CheckArtifacts(unittest.TestCase):
         self.assertIn("yanked on crates.io", yanked.errors[0])
 
 
+class Names(unittest.TestCase):
+    OFFICIAL = {"textcase", "wordplay", "mermaid", "dot", "mono", "high-contrast"}
+
+    def problems(self, listing_id="shout", name="Shout", description="Shouts text"):
+        return check_artifacts.name_problems(
+            {"id": listing_id, "name": name, "description": description}, self.OFFICIAL)
+
+    def test_a_plain_listing_passes(self):
+        for listing_id in ["shout", "richtext", "rsx", "dog", "doc", "dots", "monolith",
+                           "case-text", "wordle", "rust-rich-theme"]:
+            self.assertEqual(self.problems(listing_id), [], listing_id)
+
+    def test_reserved_ids(self):
+        for listing_id in ["rs-rich-extra", "rsrich", "rs_rich.icons", "rich-shout", "rich",
+                           "rs", "r-s", "richcli-tools", "official-pack", "Official"]:
+            self.assertTrue(any("reserved" in p for p in self.problems(listing_id)), listing_id)
+
+    def test_lookalike_ids(self):
+        for listing_id in ["textcase2", "text-case", "text_case", "textcas", "wordp1ay",
+                           "word-play", "mermaid.", "mermald", "d-o-t", "mon0",
+                           "high_contrast", "highcontrast2"]:
+            self.assertTrue(any("looks like the official package" in p
+                                for p in self.problems(listing_id)), listing_id)
+
+    def test_non_ascii_ids(self):
+        self.assertIn("must be ASCII", self.problems("textc\u0430se")[0])
+
+    def test_reserved_wording(self):
+        for name in ["Official shout", "OFFICIAL", "O-f-f-i-c-i-a-l shout", "Shout by rs-rich",
+                     "RS_RICH shout", "Unofficial shout"]:
+            self.assertTrue(self.problems(name=name), name)
+        for description in ["The official shout", "An un-official port", "OFFICIAL!"]:
+            self.assertTrue(self.problems(description=description), description)
+        self.assertEqual(self.problems(name="Shout for rich", description="Rich text, louder"), [])
+
+
+class NameChecks(CheckArtifacts):
+    def official(self):
+        listing = self.pack_listing(tier="official")
+        listing["id"] = "textcase"
+        listing["repository"] = "https://github.com/buchochelliq-labs/rs-rich-cli"
+        return listing
+
+    def test_a_new_lookalike_is_refused_unless_approved(self):
+        self.write("textcase", self.official())
+        self.commit()
+        lookalike = self.pack_listing()
+        lookalike["id"] = "text-case"
+        self.write("text-case", lookalike)
+        errors = self.run_checker().errors
+        self.assertEqual(len(errors), 1)
+        self.assertIn("looks like the official package 'textcase'", errors[0])
+        self.assertIn("name-approved", errors[0])
+        checker = check_artifacts.Checker(self.root, fetcher=fake_fetch([], {}),
+                                          crate_entry=lambda n, v: {}, allow_names=True)
+        for path in sorted((self.root / "packages").glob("*.json")):
+            checker.check_listing(path, "HEAD", False, False)
+        self.assertEqual(checker.errors, [])
+
+    def test_an_official_listing_may_use_the_words(self):
+        listing = self.official()
+        listing["name"] = "Text case, official"
+        self.write("textcase", listing)
+        self.assertEqual(self.run_checker(base=None, allow_tier=True).errors, [])
+
+    def test_a_listed_name_is_checked_again_only_when_it_changes(self):
+        listing = self.pack_listing()
+        listing["name"] = "Unofficial pack"
+        self.write("pack", listing)
+        self.assertIn("says 'official'", self.run_checker(base=None).errors[0])
+        self.commit()
+        # Merged with the label: later pull requests do not trip on it.
+        self.assertEqual(self.run_checker().errors, [])
+        listing["description"] = "The official pack"
+        self.write("pack", listing)
+        self.assertTrue(self.run_checker().errors)
+
+
 class BuildIndex(unittest.TestCase):
     def test_serial_grows_and_ids_match(self):
         with tempfile.TemporaryDirectory() as directory:
