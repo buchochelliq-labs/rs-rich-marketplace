@@ -73,11 +73,14 @@ delete it, so installs that name it can still be verified.
 | `mermaid` | crate | `rs-rich-mermaid` |
 | `dot` | crate | `rs-rich-diagram`, feature `plugin` |
 | `lumis` | crate | `rs-rich-lumis` |
-| `textcase` | wasm-plugin | rs-rich-cli's `crates/rich-plugin-api/examples/wasm/textcase.wat` |
+| `textcase` | wasm-plugin | rs-rich-cli's `crates/rich-plugin-api/examples/wasm/textcase.wat` (0.1.0) and `crates/rich-cli/official/wasm/textcase-VERSION.wat` (0.2.0 on) |
+| `wordplay` | wasm-plugin | rs-rich-cli's `crates/rich-cli/official/wasm/wordplay-VERSION.wat` |
 | `status`, `dev`, `fun` | micro-pack | rs-rich-cli's `crates/rich-micro/builtin/` |
+| `dusk`, `paper`, `ocean`, `high-contrast`, `mono` | theme | rs-rich-cli's `crates/rich-cli/official/themes/ID.ini` |
 
-The WASM plugin and the micro packs are built reproducibly in rs-rich-cli,
-whose `tests/official_artifacts.rs` pins their hashes and writes them:
+The WASM plugins, the micro packs and the themes are built reproducibly in
+rs-rich-cli, whose `tests/official_artifacts.rs` pins their hashes and
+writes them:
 
 ```bash
 RICH_OFFICIAL_ARTIFACTS=../rs-rich-marketplace/artifacts cargo test -p rs-rich-cli \

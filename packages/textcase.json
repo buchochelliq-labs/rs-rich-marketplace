@@ -3,11 +3,57 @@
   "id": "textcase",
   "kind": "wasm-plugin",
   "name": "Text case",
-  "description": "Upper- and lower-cases ASCII text, and draws loud fences in bold capitals",
+  "description": "Changes the case of ASCII text (upper, lower, title, snake, kebab, camel), and draws loud fences in bold capitals",
   "tier": "official",
   "license": "MIT",
   "repository": "https://github.com/buchochelliq-labs/rs-rich-cli",
   "versions": [
+    {
+      "version": "0.2.0",
+      "published": "2026-10-26",
+      "requires": {
+        "abi": "1.0"
+      },
+      "artifact": {
+        "url": "https://raw.githubusercontent.com/buchochelliq-labs/rs-rich-marketplace/main/artifacts/textcase/textcase-0.2.0.wasm",
+        "sha256": "31b870abcaf18270064d9c8aaa3e8f78b200a83b9ca847767f60c266617579e9",
+        "size": 1784
+      },
+      "source_revision": "d26de521746b47baa479b0f7c902f2ed8909b580",
+      "capabilities": [
+        {
+          "kind": "transform",
+          "name": "upcase"
+        },
+        {
+          "kind": "transform",
+          "name": "downcase"
+        },
+        {
+          "kind": "fence-ansi",
+          "name": "loud"
+        },
+        {
+          "kind": "transform",
+          "name": "titlecase"
+        },
+        {
+          "kind": "transform",
+          "name": "snakecase"
+        },
+        {
+          "kind": "transform",
+          "name": "kebabcase"
+        },
+        {
+          "kind": "transform",
+          "name": "camelcase"
+        }
+      ],
+      "permissions": [
+        "ansi-output"
+      ]
+    },
     {
       "version": "0.1.0",
       "published": "2026-10-26",
