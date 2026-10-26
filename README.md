@@ -6,6 +6,16 @@ reads. The format, the trust rules and the tiers are rs-rich-cli's
 [marketplace design note](https://github.com/buchochelliq-labs/rs-rich-cli/blob/main/docs/design/marketplace.md);
 this file says how to use the repository.
 
+**Browse it on the web:** the docs site's
+[Marketplace page](https://buchochelliq-labs.github.io/rs-rich-cli/latest/marketplace/)
+searches and filters this index in the browser (by kind, tier and
+recommended; official packages are marked), and links each package to its
+install command and its reviews. It ships with rs-rich-cli 0.0.23; until
+that release is out, main's docs have it at
+[`/dev/marketplace/`](https://buchochelliq-labs.github.io/rs-rich-cli/dev/marketplace/).
+The rest of the documentation is at
+[buchochelliq-labs.github.io/rs-rich-cli](https://buchochelliq-labs.github.io/rs-rich-cli/).
+
 ```bash
 rich plugin search                 # what is listed, and what loads on this host
 rich plugin info textcase
