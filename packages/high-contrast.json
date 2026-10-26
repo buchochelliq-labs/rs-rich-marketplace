@@ -15,7 +15,7 @@
         "theme_format": 1
       },
       "artifact": {
-        "url": "https://raw.githubusercontent.com/buchochelliq-labs/rs-rich-marketplace/main/artifacts/high-contrast/high-contrast-1.0.0.ini",
+        "url": "https://github.com/buchochelliq-labs/rs-rich-marketplace/releases/download/high-contrast-v1.0.0/high-contrast-1.0.0.ini",
         "sha256": "902e91575c0c45f6237dec8c17ef1e22cf43d06eacf96e1b50247e948a270aec",
         "size": 4616
       },

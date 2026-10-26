@@ -15,7 +15,7 @@
         "theme_format": 1
       },
       "artifact": {
-        "url": "https://raw.githubusercontent.com/buchochelliq-labs/rs-rich-marketplace/main/artifacts/dusk/dusk-1.0.0.ini",
+        "url": "https://github.com/buchochelliq-labs/rs-rich-marketplace/releases/download/dusk-v1.0.0/dusk-1.0.0.ini",
         "sha256": "6c5af968c76ad7be6f5c9437109b60f4bc0dac5e0362b7ac99f35881f33cc8db",
         "size": 4524
       },

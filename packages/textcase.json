@@ -15,7 +15,7 @@
         "abi": "1.0"
       },
       "artifact": {
-        "url": "https://raw.githubusercontent.com/buchochelliq-labs/rs-rich-marketplace/main/artifacts/textcase/textcase-0.2.0.wasm",
+        "url": "https://github.com/buchochelliq-labs/rs-rich-marketplace/releases/download/textcase-v0.2.0/textcase-0.2.0.wasm",
         "sha256": "31b870abcaf18270064d9c8aaa3e8f78b200a83b9ca847767f60c266617579e9",
         "size": 1784
       },

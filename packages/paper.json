@@ -15,7 +15,7 @@
         "theme_format": 1
       },
       "artifact": {
-        "url": "https://raw.githubusercontent.com/buchochelliq-labs/rs-rich-marketplace/main/artifacts/paper/paper-1.0.0.ini",
+        "url": "https://github.com/buchochelliq-labs/rs-rich-marketplace/releases/download/paper-v1.0.0/paper-1.0.0.ini",
         "sha256": "ba471f21510d1261f75cc0203712399f71c285fb1a616e7a4427e87b47fa8ac2",
         "size": 4532
       },

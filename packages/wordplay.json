@@ -15,7 +15,7 @@
         "abi": "1.0"
       },
       "artifact": {
-        "url": "https://raw.githubusercontent.com/buchochelliq-labs/rs-rich-marketplace/main/artifacts/wordplay/wordplay-0.1.0.wasm",
+        "url": "https://github.com/buchochelliq-labs/rs-rich-marketplace/releases/download/wordplay-v0.1.0/wordplay-0.1.0.wasm",
         "sha256": "d14fe2459f83f7b95f2861d3ea3b1c1f1ce726a9c9779001669765240cfd0452",
         "size": 1950
       },

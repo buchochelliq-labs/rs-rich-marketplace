@@ -15,7 +15,7 @@
         "theme_format": 1
       },
       "artifact": {
-        "url": "https://raw.githubusercontent.com/buchochelliq-labs/rs-rich-marketplace/main/artifacts/ocean/ocean-1.0.0.ini",
+        "url": "https://github.com/buchochelliq-labs/rs-rich-marketplace/releases/download/ocean-v1.0.0/ocean-1.0.0.ini",
         "sha256": "b6e01aa19c153b89e7d94c031bb64ff770ed34e6e0669ae23a3cbafcfa0e3582",
         "size": 4538
       },
