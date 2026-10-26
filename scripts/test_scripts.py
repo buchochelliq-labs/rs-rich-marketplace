@@ -343,6 +343,49 @@ class NameChecks(CheckArtifacts):
         self.assertTrue(self.run_checker().errors)
 
 
+class Recommended(CheckArtifacts):
+    def check(self, allow=False):
+        checker = check_artifacts.Checker(self.root, fetcher=fake_fetch([], {}),
+                                          crate_entry=lambda n, v: {}, allow_recommended=allow)
+        for path in sorted((self.root / "packages").glob("*.json")):
+            checker.check_listing(path, "HEAD", False, False)
+        return checker.errors
+
+    def test_adding_changing_or_removing_needs_the_label(self):
+        listing = self.pack_listing()
+        self.write("pack", listing)
+        self.commit()
+        self.assertEqual(self.check(), [])
+        listing["recommended"] = {"since": "2026-10-27", "note": "A good pack"}
+        self.write("pack", listing)
+        self.assertEqual(len(self.check()), 1)
+        self.assertIn("`recommended` added needs a maintainer's `recommended-approved` label",
+                      self.check()[0])
+        self.assertEqual(self.check(allow=True), [])
+        self.commit()
+        self.assertEqual(self.check(), [], "unchanged needs nothing")
+        listing["recommended"]["note"] = "A better pack"
+        self.write("pack", listing)
+        self.assertIn("`recommended` changed", self.check()[0])
+        del listing["recommended"]
+        self.write("pack", listing)
+        self.assertIn("`recommended` removed", self.check()[0])
+
+    def test_tier_approval_is_not_enough(self):
+        listing = self.pack_listing()
+        self.write("pack", listing)
+        self.commit()
+        listing["recommended"] = {"since": "2026-10-27", "note": "n"}
+        self.write("pack", listing)
+        self.assertIn("recommended-approved", self.run_checker(allow_tier=True).errors[0])
+
+    def test_a_new_listing_that_is_recommended_needs_it_too(self):
+        listing = self.pack_listing()
+        listing["recommended"] = {"since": "2026-10-27", "note": "n"}
+        self.write("pack", listing)
+        self.assertIn("`recommended` added", self.check()[0])
+
+
 class BuildIndex(unittest.TestCase):
     def test_serial_grows_and_ids_match(self):
         with tempfile.TemporaryDirectory() as directory:

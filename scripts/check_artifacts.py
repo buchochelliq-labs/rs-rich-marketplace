@@ -27,6 +27,12 @@ version that `--base` (a Git revision) does not list, or lists differently
   or whose tier rises, is refused unless `--allow-tier` is given (the
   workflow passes it when a maintainer labels the pull request
   `tier-approved`). With `--all` there is no base, and no tier check.
+- **Recommended.** Adding, changing or removing a listing's
+  `recommended` (`{"since": DATE, "note": TEXT}`, shown as ★ Recommended)
+  is refused unless `--allow-recommended` is given (the workflow passes
+  it when a maintainer labels the pull request `recommended-approved`, a
+  separate label from `tier-approved`). With `--all` there is no base, and
+  no check.
 - **Names that pass for ours.** A listing that is not `official`, when it
   is new or its id, name or description changes, may not:
   - use a reserved id: one starting with `rs-rich`, `rich-`, `richcli` or
@@ -179,9 +185,10 @@ def frozen(version: dict) -> dict:
 
 class Checker:
     def __init__(self, root: Path, fetcher=common.fetch, crate_entry=common.crate_index_entry,
-                 allow_names: bool = False):
+                 allow_names: bool = False, allow_recommended: bool = False):
         self.root = root
         self.allow_names = allow_names
+        self.allow_recommended = allow_recommended
         self.official_ids = None
         self.fetch = fetcher
         self.crate_entry = crate_entry
@@ -215,6 +222,13 @@ class Checker:
         if base is not None and new_tier > old_tier and not allow_tier:
             self.error(f"{name}: tier {listing.get('tier')!r} "
                        f"({'raised' if old else 'set'}) needs a maintainer's `tier-approved` label")
+
+        if (base is not None and not self.allow_recommended
+                and (old or {}).get("recommended") != listing.get("recommended")):
+            change = ("added" if "recommended" not in (old or {}) else
+                      "removed" if "recommended" not in listing else "changed")
+            self.error(f"{name}: `recommended` {change} needs a maintainer's "
+                       "`recommended-approved` label")
 
         if listing.get("tier") != "official" and not self.allow_names:
             identity_changed = old is None or any(
@@ -291,6 +305,8 @@ def main(argv=None) -> int:
     group.add_argument("--all", action="store_true", help="check every version")
     parser.add_argument("--allow-tier", action="store_true",
                         help="a maintainer approved setting or raising a tier")
+    parser.add_argument("--allow-recommended", action="store_true",
+                        help="a maintainer approved adding, changing or removing `recommended`")
     parser.add_argument("--allow-names", action="store_true",
                         help="a maintainer approved a name that looks like rs-rich's own")
     parser.add_argument("--mirror", type=Path, help="write each checked artifact to DIR/HOST/PATH")
@@ -298,7 +314,8 @@ def main(argv=None) -> int:
                         help="write ID@VERSION for each checked installable version")
     args = parser.parse_args(argv)
 
-    checker = Checker(args.root, allow_names=args.allow_names)
+    checker = Checker(args.root, allow_names=args.allow_names,
+                      allow_recommended=args.allow_recommended)
     for path in sorted((args.root / "packages").glob("*.json")):
         try:
             checker.check_listing(path, args.base, args.all, args.allow_tier)
