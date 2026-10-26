@@ -40,10 +40,10 @@
       "permissions": []
     }
   ],
-  "homepage": "https://github.com/buchochelliq-labs/rs-rich-cli/tree/main/crates/rich-micro/builtin/dev",
   "authors": [
     "rs-rich contributors"
   ],
+  "homepage": "https://github.com/buchochelliq-labs/rs-rich-cli/tree/main/crates/rich-micro/builtin/dev",
   "keywords": [
     "micro",
     "icons",
