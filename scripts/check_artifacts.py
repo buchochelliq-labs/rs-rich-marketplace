@@ -22,7 +22,7 @@ version that `--base` (a Git revision) does not list, or lists differently
 - **The tier.** A listing that is new with a tier other than `community`,
   or whose tier rises, is refused unless `--allow-tier` is given (the
   workflow passes it when a maintainer labels the pull request
-  `tier-approved`).
+  `tier-approved`). With `--all` there is no base, and no tier check.
 
 `--mirror DIR` writes each checked artifact to `DIR/HOST/PATH`, the layout a
 local marketplace serves to `rich plugin install`; `--installs FILE` writes
@@ -97,7 +97,7 @@ class Checker:
 
         old_tier = TIERS.get(old.get("tier"), 0) if old else 0
         new_tier = TIERS.get(listing.get("tier"), 0)
-        if new_tier > old_tier and not allow_tier:
+        if base is not None and new_tier > old_tier and not allow_tier:
             self.error(f"{name}: tier {listing.get('tier')!r} "
                        f"({'raised' if old else 'set'}) needs a maintainer's `tier-approved` label")
 
