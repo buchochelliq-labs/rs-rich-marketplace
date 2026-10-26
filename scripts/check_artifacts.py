@@ -11,11 +11,15 @@ version that `--base` (a Git revision) does not list, or lists differently
 - **A version never changes.** One listed at `--base` may only gain
   `yanked` and `yank_reason`; anything else is refused.
 - **The artifact matches.** It is read at most `size` bytes, and its size
-  and SHA-256 must equal the listing's. A URL under this repository's
-  `main` (`https://raw.githubusercontent.com/buchochelliq-labs/rs-rich-marketplace/main/`)
-  is read from the checkout instead, since it is served only once merged;
-  every such version is checked on every run, so a committed artifact
-  cannot change under a listing.
+  and SHA-256 must equal the listing's. An artifact this repository hosts
+  is read from the checkout instead, since it is served only once merged:
+  a URL under its `main`
+  (`https://raw.githubusercontent.com/buchochelliq-labs/rs-rich-marketplace/main/PATH`,
+  read from `PATH`) or a release asset of it
+  (`https://github.com/buchochelliq-labs/rs-rich-marketplace/releases/download/ID-vVERSION/ID-VERSION.EXT`,
+  read from `artifacts/ID/ID-VERSION.EXT`; the tag and the file name must
+  match the listing's id and version). Every such version is checked on
+  every run, so a committed artifact cannot change under a listing.
 - **A crate is crates.io's.** Its hash must equal the checksum in
   crates.io's index, and the version must not be yanked there unless the
   listing yanks it too.
@@ -86,9 +90,9 @@ class Checker:
     def error(self, message: str):
         self.errors.append(message)
 
-    def read_artifact(self, url: str, size: int) -> bytes:
-        if url.startswith(common.RAW_MAIN):
-            relative = url[len(common.RAW_MAIN):]
+    def read_artifact(self, listing_id: str, version: str, url: str, size: int) -> bytes:
+        relative = common.hosted_path(listing_id, version, url)
+        if relative is not None:
             path = (self.root / relative).resolve()
             if self.root.resolve() not in path.parents:
                 raise ValueError(f"{url}: outside the repository")
@@ -124,7 +128,8 @@ class Checker:
                 self.error(f"{name} {number}: a listed version never changes "
                            "(only yanked and yank_reason may be added)")
                 continue
-            local = version["artifact"]["url"].startswith(common.RAW_MAIN)
+            url = version["artifact"]["url"]
+            local = url.startswith((common.RAW_MAIN, common.RELEASES))
             if not (all_versions or previous is None or local):
                 continue
             self.check_version(listing, version)
@@ -136,7 +141,8 @@ class Checker:
         name = f"{listing['id']} {version['version']}"
         artifact = version["artifact"]
         try:
-            data = self.read_artifact(artifact["url"], artifact["size"])
+            data = self.read_artifact(listing["id"], version["version"], artifact["url"],
+                                      artifact["size"])
         except Exception as error:  # noqa: BLE001 - any failure is reported
             self.error(f"{name}: cannot read {artifact['url']}: {error}")
             return
