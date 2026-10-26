@@ -18,7 +18,22 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import add_crate_version  # noqa: E402
 import build_index  # noqa: E402
 import check_artifacts  # noqa: E402
+import discussions  # noqa: E402
+import github_api  # noqa: E402
 import marketplace_common as common  # noqa: E402
+import publish_releases  # noqa: E402
+import stats  # noqa: E402
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+FIXTURES = Path(__file__).resolve().parent / "fixtures"
+# Listings as packages/ has them (a release-hosted textcase 0.2.0, dusk and
+# wordplay; raw-hosted textcase 0.1.0 and status; two crates), copied so the
+# tests do not move when packages/ does. Their artifacts are the repository's.
+LISTINGS = FIXTURES
+
+
+def fixture(name):
+    return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
 
 CRATE = b"pretend .crate bytes"
 CKSUM = common.sha256(CRATE)
@@ -62,6 +77,17 @@ class Common(unittest.TestCase):
     def test_only_https(self):
         with self.assertRaises(ValueError):
             common.fetch("http://example.com/x")
+
+
+class Hosting(unittest.TestCase):
+    def test_hosted_paths(self):
+        raw = common.RAW_MAIN + "artifacts/a/a-1.0.0.ini"
+        self.assertEqual(common.hosted_path("a", "1.0.0", raw), "artifacts/a/a-1.0.0.ini")
+        release = common.RELEASES + "high-contrast-v1.0.0/high-contrast-1.0.0.ini"
+        self.assertEqual(common.hosted_path("high-contrast", "1.0.0", release),
+                         "artifacts/high-contrast/high-contrast-1.0.0.ini")
+        self.assertIsNone(common.hosted_path("a", "1.0.0", "https://example.com/a-1.0.0.ini"))
+        self.assertEqual(common.release_tag("textcase", "0.2.0"), "textcase-v0.2.0")
 
 
 class AddCrateVersion(unittest.TestCase):
@@ -146,6 +172,42 @@ class CheckArtifacts(unittest.TestCase):
         self.assertEqual(checker.errors, [])
         self.assertEqual(len(checker.checked), 1)
 
+    def release_listing(self, tag="pack-v1.0.0", name="pack-1.0.0.richmicro"):
+        listing = self.pack_listing()
+        listing["versions"][0]["artifact"]["url"] = f"{common.RELEASES}{tag}/{name}"
+        return listing
+
+    def test_a_release_asset_is_read_from_the_checkout(self):
+        self.write("pack", self.release_listing())
+        checker = self.run_checker(base=None)
+        self.assertEqual(checker.errors, [])
+        self.assertEqual(len(checker.checked), 1)
+
+    def test_a_release_asset_must_be_in_the_checkout(self):
+        (self.root / "artifacts/pack/pack-1.0.0.richmicro").unlink()
+        self.write("pack", self.release_listing())
+        self.assertIn("not in this branch", self.run_checker(base=None).errors[0])
+
+    def test_a_release_asset_names_its_id_and_version(self):
+        for tag, name, expected in [
+            ("pack-v1.0.1", "pack-1.0.0.richmicro", "the release must be pack-v1.0.0"),
+            ("v1.0.0", "pack-1.0.0.richmicro", "the release must be pack-v1.0.0"),
+            ("pack-v1.0.0", "other-1.0.0.richmicro", "must be named pack-1.0.0.EXT"),
+            ("pack-v1.0.0", "pack-1.0.1.richmicro", "must be named pack-1.0.0.EXT"),
+        ]:
+            self.write("pack", self.release_listing(tag, name))
+            errors = self.run_checker(base=None).errors
+            self.assertEqual(len(errors), 1, (tag, name))
+            self.assertIn(expected, errors[0])
+        self.write("pack", self.release_listing("pack-v1.0.0/extra", "pack-1.0.0.richmicro"))
+        self.assertIn("expected", self.run_checker(base=None).errors[0])
+
+    def test_a_listed_release_version_is_checked_on_every_run(self):
+        self.write("pack", self.release_listing())
+        self.commit()
+        (self.root / "artifacts/pack/pack-1.0.0.richmicro").write_bytes(b"changed")
+        self.assertIn("bytes, listed as", self.run_checker().errors[0])
+
     def test_a_wrong_hash_is_refused(self):
         self.write("pack", self.pack_listing(sha="a" * 64))
         self.assertIn("hashes to", self.run_checker(base=None).errors[0])
@@ -221,6 +283,268 @@ class BuildIndex(unittest.TestCase):
             (root / "packages/wrong.json").write_text(common.dump_listing(other))
             with self.assertRaises(SystemExit):
                 build_index.main(["--root", str(root)])
+
+
+class GitHubClient(unittest.TestCase):
+    def test_requests_carry_the_token_and_a_generic_user_agent_only(self):
+        seen = []
+
+        def send(method, url, headers, body):
+            seen.append((method, url, headers))
+            return 200, {}, b"[]"
+
+        github_api.GitHub(token="t0k", send=send).releases()
+        method, url, headers = seen[0]
+        self.assertEqual((method, url), ("GET", github_api.API + "repos/"
+                                         f"{common.REPOSITORY}/releases?per_page=100&page=1"))
+        self.assertEqual(headers["Authorization"], "Bearer t0k")
+        self.assertEqual(headers["User-Agent"], github_api.USER_AGENT)
+
+    def test_an_asset_download_follows_one_redirect_without_the_token(self):
+        seen = []
+
+        def send(method, url, headers, body):
+            seen.append((url, headers))
+            if url.startswith(github_api.API):
+                return 302, {"Location": "https://objects.example.test/asset"}, b""
+            return 200, {}, b"bytes"
+
+        data = github_api.GitHub(token="t0k", send=send).download_asset({"id": 7})
+        self.assertEqual(data, b"bytes")
+        self.assertEqual(seen[0][1]["Accept"], "application/octet-stream")
+        self.assertNotIn("Authorization", seen[1][1])
+
+    def test_errors(self):
+        github = github_api.GitHub(token="", send=lambda *a: (200, {}, b'{"errors": [{"message": "no"}]}'))
+        with self.assertRaises(github_api.ApiError):
+            github.graphql("query {}", {})
+        github = github_api.GitHub(token="", send=lambda *a: (404, {}, b"{}"))
+        self.assertIsNone(github.release_by_tag("x-v1.0.0"))
+        with self.assertRaises(github_api.ApiError):
+            github.releases()
+
+
+class FakeReleases:
+    """GitHub's releases, in memory."""
+
+    def __init__(self):
+        self.releases = {}
+        self.calls = []
+
+    def release_by_tag(self, tag):
+        return self.releases.get(tag)
+
+    def create_release(self, tag, target, name, body):
+        self.calls.append(("create", tag, target))
+        release = {"id": len(self.releases) + 1, "tag_name": tag, "assets": [], "body": body}
+        self.releases[tag] = release
+        return release
+
+    def upload_asset(self, release, name, data):
+        self.calls.append(("upload", release["tag_name"], name))
+        asset = {"id": name, "name": name, "size": len(data), "data": data}
+        release["assets"].append(asset)
+        return asset
+
+    def download_asset(self, asset):
+        return asset["data"]
+
+
+class PublishReleases(unittest.TestCase):
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.root = Path(self.dir.name)
+        (self.root / "packages").mkdir()
+        for name in ["textcase", "dusk", "status"]:
+            listing = json.loads((LISTINGS / "packages" / f"{name}.json").read_bytes())
+            (self.root / "packages" / f"{name}.json").write_text(common.dump_listing(listing))
+            for version in listing["versions"]:
+                relative = common.hosted_path(name, version["version"], version["artifact"]["url"])
+                target = self.root / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes((REPO_ROOT / relative).read_bytes())
+
+    def tearDown(self):
+        self.dir.cleanup()
+
+    def test_makes_each_missing_release_once(self):
+        github = FakeReleases()
+        out = []
+        self.assertEqual(publish_releases.publish(github, self.root, "abc123", False, out.append), [])
+        # Only the release-hosted versions: textcase 0.2.0 and dusk 1.0.0,
+        # not textcase 0.1.0 or status 1.0.0 on raw URLs.
+        self.assertEqual(sorted(github.releases), ["dusk-v1.0.0", "textcase-v0.2.0"])
+        self.assertIn(("create", "dusk-v1.0.0", "abc123"), github.calls)
+        self.assertIn("rich plugin install dusk@1.0.0", github.releases["dusk-v1.0.0"]["body"])
+        calls = len(github.calls)
+        self.assertEqual(publish_releases.publish(github, self.root, "def456", False, out.append), [])
+        self.assertEqual(len(github.calls), calls, "a second run changes nothing")
+
+    def test_an_existing_asset_that_does_not_match_is_never_replaced(self):
+        github = FakeReleases()
+        release = github.create_release("dusk-v1.0.0", "abc", "dusk 1.0.0", "")
+        github.upload_asset(release, "dusk-1.0.0.ini", b"x" * 4524)
+        github.calls.clear()
+        errors = publish_releases.publish(github, self.root, "abc", False, lambda _: None)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("never replaced", errors[0])
+        self.assertNotIn(("upload", "dusk-v1.0.0", "dusk-1.0.0.ini"), github.calls)
+
+    def test_a_release_without_its_asset_gets_it(self):
+        github = FakeReleases()
+        github.create_release("dusk-v1.0.0", "abc", "dusk 1.0.0", "")
+        publish_releases.publish(github, self.root, "abc", False, lambda _: None)
+        self.assertEqual(github.releases["dusk-v1.0.0"]["assets"][0]["name"], "dusk-1.0.0.ini")
+
+    def test_a_changed_file_in_the_checkout_is_refused(self):
+        (self.root / "artifacts/dusk/dusk-1.0.0.ini").write_text("[styles]\n")
+        github = FakeReleases()
+        errors = publish_releases.publish(github, self.root, "abc", False, lambda _: None)
+        self.assertIn("listed as 4524", errors[0])
+        self.assertNotIn("dusk-v1.0.0", github.releases)
+
+    def test_a_dry_run_changes_nothing(self):
+        github = FakeReleases()
+        out = []
+        self.assertEqual(publish_releases.publish(github, self.root, None, True, out.append), [])
+        self.assertEqual(github.calls, [])
+        self.assertIn("would create release dusk-v1.0.0 and upload dusk-1.0.0.ini", out)
+
+
+class FakeApi:
+    """stats.py's and discussions.py's view of GitHub, from the fixtures."""
+
+    def __init__(self, discussions_fixture="github-discussions.json"):
+        self.repository = common.REPOSITORY
+        self.owner, self.name = self.repository.split("/")
+        self.discussions = fixture(discussions_fixture)["data"]
+        self.created = []
+
+    def releases(self):
+        return fixture("github-releases.json")
+
+    def graphql(self, query, variables):
+        if "createDiscussion" in query:
+            self.created.append(variables)
+            number = 10 + len(self.created)
+            return {"createDiscussion": {"discussion": {
+                "url": f"https://github.com/{self.repository}/discussions/{number}"}}}
+        repository = dict(self.discussions["repository"])
+        repository.setdefault("id", "R_marketplace")
+        return {"repository": repository}
+
+
+def crates_io(url):
+    name = url.split("/crates/")[1].split("/")[0]
+    return fixture(f"crates-io-{name}-versions.json")
+
+
+class Stats(unittest.TestCase):
+    NOW = __import__("datetime").datetime(2026, 10, 27, 3, 41, 7,
+                                          tzinfo=__import__("datetime").timezone.utc)
+
+    def build(self, api=None):
+        warnings = []
+        result = stats.build(LISTINGS, api or FakeApi(), fetch_json=crates_io, now=self.NOW,
+                             warn=warnings.append)
+        return result, warnings
+
+    def test_downloads_per_version(self):
+        result, warnings = self.build()
+        self.assertEqual(warnings, [])
+        self.assertEqual(result["schema_version"], 1)
+        self.assertEqual(result["generated_at"], "2026-10-27T03:41:07Z")
+        packages = result["packages"]
+        self.assertEqual(sorted(packages),
+                         ["dot", "dusk", "mermaid", "status", "textcase", "wordplay"])
+        # A release asset is counted; the raw URL of 0.1.0 is not.
+        self.assertEqual(packages["textcase"]["downloads"]["versions"]["0.2.0"], 17)
+        self.assertIsNone(packages["textcase"]["downloads"]["versions"]["0.1.0"])
+        self.assertEqual(packages["textcase"]["downloads"]["total"], 17)
+        # A release not made yet, and a raw-URL pack: not counted at all.
+        self.assertEqual(packages["wordplay"]["downloads"], {"total": None, "versions": {"0.1.0": None}})
+        self.assertEqual(packages["status"]["downloads"]["total"], None)
+        # A crate: crates.io's count for each listed version.
+        self.assertEqual(packages["mermaid"]["downloads"], {"total": 20, "versions": {"0.0.8": 20}})
+        self.assertEqual(packages["dot"]["downloads"]["versions"]["0.0.5"], 25)
+        self.assertEqual(stats.validate(result, "auto"), [])
+
+    def test_reviews_only_from_the_bots_discussions_in_the_category(self):
+        packages = self.build()[0]["packages"]
+        self.assertEqual(packages["textcase"]["reviews"], {
+            "url": f"https://github.com/{common.REPOSITORY}/discussions/3",
+            "up": 4, "down": 1, "comments": 2})
+        self.assertEqual(packages["status"]["reviews"]["up"], 0)
+        # Someone else's "dusk" and a "mermaid" in General are not reviews.
+        self.assertIsNone(packages["dusk"]["reviews"])
+        self.assertIsNone(packages["mermaid"]["reviews"])
+
+    def test_without_discussions_reviews_are_null_with_a_warning(self):
+        result, warnings = self.build(FakeApi("github-discussions-off.json"))
+        self.assertTrue(all(p["reviews"] is None for p in result["packages"].values()))
+        self.assertIn("Discussions are off", warnings[0])
+
+    def test_a_wrong_total_is_caught(self):
+        result = self.build()[0]
+        result["packages"]["textcase"]["downloads"]["total"] = 3
+        self.assertIn("textcase: total 3 is not 17", stats.validate(result, "off"))
+
+    def test_the_schema_matches_the_output(self):
+        try:
+            import jsonschema  # noqa: F401
+        except ImportError:
+            self.skipTest("jsonschema is not installed")
+        result = self.build()[0]
+        self.assertEqual(stats.validate(result, "require"), [])
+        result["packages"]["textcase"]["downloads"]["versions"]["0.2.0"] = -1
+        result["packages"]["textcase"]["reviews"]["up"] = "many"
+        self.assertEqual(len(stats.validate(result, "require")), 3)
+
+    def test_crates_io_pages(self):
+        pages = {
+            f"{stats.CRATES_IO}c/versions": {"versions": [{"num": "1.0.0", "downloads": 3}],
+                                             "meta": {"next_page": "?page=2"}},
+            f"{stats.CRATES_IO}c/versions?page=2": {"versions": [{"num": "0.9.0", "downloads": 1}],
+                                                    "meta": {"next_page": None}},
+        }
+        self.assertEqual(stats.crate_counts("c", pages.__getitem__), {"1.0.0": 3, "0.9.0": 1})
+
+
+class Discussions(unittest.TestCase):
+    def test_opens_one_per_package_without_one(self):
+        api = FakeApi()
+        out = []
+        opened = discussions.open_missing(api, LISTINGS, False, out.append)
+        listed = sorted(p.stem for p in (LISTINGS / "packages").glob("*.json"))
+        # textcase and status have theirs; someone else's dusk does not count.
+        self.assertEqual(opened, [i for i in listed if i not in ("textcase", "status")])
+        self.assertIn("dusk", opened)
+        created = {c["title"]: c for c in api.created}
+        self.assertEqual(created["dusk"]["category"], "DIC_reviews")
+        self.assertEqual(created["dusk"]["repository"], "R_marketplace")
+        body = created["wordplay"]["body"]
+        self.assertIn("rich plugin install wordplay", body)
+        self.assertIn("👍 / 👎 this post to rate it; comment to review", body)
+        self.assertIn("cargo add rs-rich-mermaid@=", created["mermaid"]["body"])
+        self.assertIn("--features plugin", created["dot"]["body"])
+
+    def test_a_dry_run_opens_nothing(self):
+        api = FakeApi()
+        out = []
+        self.assertEqual(discussions.open_missing(api, LISTINGS, True, out.append), [])
+        self.assertEqual(api.created, [])
+        self.assertIn("would open a review discussion for wordplay", out)
+
+    def test_missing_setup_says_what_to_do(self):
+        with self.assertRaises(discussions.SetupMissing) as caught:
+            discussions.open_missing(FakeApi("github-discussions-off.json"), LISTINGS, False)
+        self.assertIn("enable Discussions", str(caught.exception))
+        api = FakeApi()
+        api.discussions["repository"]["discussionCategories"]["nodes"] = [
+            {"id": "DIC_general", "name": "General"}]
+        with self.assertRaises(discussions.SetupMissing) as caught:
+            discussions.open_missing(api, LISTINGS, False)
+        self.assertIn("no 'Reviews' discussion category", str(caught.exception))
 
 
 if __name__ == "__main__":
