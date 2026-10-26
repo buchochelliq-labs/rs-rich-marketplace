@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "id": "textcase",
+  "kind": "wasm-plugin",
+  "name": "Text case",
+  "description": "Upper- and lower-cases ASCII text, and draws loud fences in bold capitals",
+  "tier": "official",
+  "license": "MIT",
+  "repository": "https://github.com/buchochelliq-labs/rs-rich-cli",
+  "versions": [
+    {
+      "version": "0.1.0",
+      "published": "2026-10-26",
+      "requires": {
+        "abi": "1.0"
+      },
+      "artifact": {
+        "url": "https://raw.githubusercontent.com/buchochelliq-labs/rs-rich-marketplace/main/artifacts/textcase/textcase-0.1.0.wasm",
+        "sha256": "76fe3c63d718de80b84f05506bad39edb480d84c719a4cc17c1b4a356be495c7",
+        "size": 875
+      },
+      "source_revision": "124ea70593df1b0b4af65f0c1e9df1e11072ce12",
+      "capabilities": [
+        {
+          "kind": "transform",
+          "name": "upcase"
+        },
+        {
+          "kind": "transform",
+          "name": "downcase"
+        },
+        {
+          "kind": "fence-ansi",
+          "name": "loud"
+        }
+      ],
+      "permissions": [
+        "ansi-output"
+      ]
+    }
+  ],
+  "homepage": "https://github.com/buchochelliq-labs/rs-rich-cli/blob/main/crates/rich-plugin-api/examples/wasm/textcase.wat",
+  "authors": [
+    "rs-rich contributors"
+  ],
+  "keywords": [
+    "transform",
+    "fence",
+    "case",
+    "example"
+  ]
+}
