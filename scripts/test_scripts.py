@@ -430,6 +430,8 @@ class FakeReleases:
 
 class PublishReleases(unittest.TestCase):
     def setUp(self):
+        if not (REPO_ROOT / "artifacts").is_dir():
+            self.skipTest("needs the marketplace's artifacts/ (not in rs-rich-cli's copy)")
         self.dir = tempfile.TemporaryDirectory()
         self.root = Path(self.dir.name)
         (self.root / "packages").mkdir()
