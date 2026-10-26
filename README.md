@@ -60,7 +60,15 @@ prints its `cargo add` line instead.
    (rs-rich's own packages) are set by a maintainer: the check refuses a
    tier that is set or raised until a maintainer labels the pull request
    `tier-approved`.
-5. **Names.** Users can always tell rs-rich's own packages: only they
+   Users see the tiers as **Official**, **Approved** (`reviewed` in the
+   listing) and **Community**.
+5. **Recommended.** A listing may carry `"recommended": {"since":
+   "YYYY-MM-DD", "note": "..."}`, shown as ★ Recommended. Adding,
+   changing or removing it is refused until a maintainer labels the pull
+   request `recommended-approved`, a separate label from `tier-approved`.
+   (No listing carries it yet: the marketplace's validator,
+   `RS_RICH_CLI_REF`, knows the field from rs-rich-cli 0.0.23.)
+6. **Names.** Users can always tell rs-rich's own packages: only they
    are `official`, and a listing that is not may not pass for one. The
    check refuses, in a listing that is new or renamed:
    - a reserved id: `rs-rich…`, `rich-…`, `richcli…`, `official…`, `rich`
@@ -77,7 +85,7 @@ prints its `cargo add` line instead.
    A genuine case ("an unofficial port of …", an id that only happens to
    be close) gets a maintainer's `name-approved` label on the pull
    request, which lifts this check for it.
-6. **After the merge** the signing workflow rebuilds `index.json`, bumps
+7. **After the merge** the signing workflow rebuilds `index.json`, bumps
    its serial, and signs it once the maintainer approves the run. Until
    then the listing is in the repository but not in the index `rich` reads.
 
@@ -182,6 +190,8 @@ post are counted, once a night.
    merged before this workflow existed.
 6. **Create the `name-approved` label** (Issues > Labels), beside
    `tier-approved`: it lets a pull request through the name check above.
+7. **Create the `recommended-approved` label** too: it lets a pull request
+   add, change or remove a listing's `recommended`.
 
 GitHub pauses scheduled workflows in a repository with no activity for 60
 days; re-enable "Stats" under Actions if that happens.
