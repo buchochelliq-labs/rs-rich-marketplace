@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-10-27T01:14:28Z",
+  "repository": "buchochelliq-labs/rs-rich-marketplace",
+  "packages": {
+    "dev": {
+      "downloads": {
+        "total": null,
+        "versions": {
+          "1.0.0": null
+        }
+      },
+      "reviews": {
+        "url": "https://github.com/buchochelliq-labs/rs-rich-marketplace/discussions/5",
+        "up": 0,
+        "down": 0,
+        "comments": 0
+      }
+    },
+    "dot": {
+      "downloads": {
+        "total": 33,
+        "versions": {
+          "0.0.5": 33
+        }
+      },
+      "reviews": {
+        "url": "https://github.com/buchochelliq-labs/rs-rich-marketplace/discussions/6",
+        "up": 0,
+        "down": 0,
+        "comments": 0
+      }
+    },
+    "dusk": {
+      "downloads": {
+        "total": 12,
+        "versions": {
+          "1.0.0": 12
+        }
+      },
+      "reviews": {
+        "url": "https://github.com/buchochelliq-labs/rs-rich-marketplace/discussions/7",
+        "up": 0,
+        "down": 0,
+        "comments": 0
+      }
+    },
+    "fun": {
+      "downloads": {
+        "total": null,
+        "versions": {
+          "1.0.0": null
+        }
+      },
+      "reviews": {
+        "url": "https://github.com/buchochelliq-labs/rs-rich-marketplace/discussions/8",
+        "up": 0,
+        "down": 0,
+        "comments": 0
+      }
+    },
+    "high-contrast": {
+      "downloads": {
+        "total": 1,
+        "versions": {
+          "1.0.0": 1
+        }
+      },
+      "reviews": {
+        "url": "https://github.com/buchochelliq-labs/rs-rich-marketplace/discussions/9",
+        "up": 0,
+        "down": 0,
+        "comments": 0
+      }
+    },
+    "lumis": {
+      "downloads": {
+        "total": 18,
+        "versions": {
+          "0.0.6": 18
+        }
+      },
+      "reviews": {
+        "url": "https://github.com/buchochelliq-labs/rs-rich-marketplace/discussions/10",
+        "up": 0,
+        "down": 0,
+        "comments": 0
+      }
+    },
+    "mermaid": {
+      "downloads": {
+        "total": 28,
+        "versions": {
+          "0.0.8": 28
+        }
+      },
+      "reviews": {
+        "url": "https://github.com/buchochelliq-labs/rs-rich-marketplace/discussions/11",
+        "up": 0,
+        "down": 0,
+        "comments": 0
+      }
+    },
+    "mono": {
+      "downloads": {
+        "total": 1,
+        "versions": {
+          "1.0.0": 1
+        }
+      },
+      "reviews": {
+        "url": "https://github.com/buchochelliq-labs/rs-rich-marketplace/discussions/12",
+        "up": 0,
+        "down": 0,
+        "comments": 0
+      }
+    },
+    "ocean": {
+      "downloads": {
+        "total": 1,
+        "versions": {
+          "1.0.0": 1
+        }
+      },
+      "reviews": {
+        "url": "https://github.com/buchochelliq-labs/rs-rich-marketplace/discussions/13",
+        "up": 0,
+        "down": 0,
+        "comments": 0
+      }
+    },
+    "paper": {
+      "downloads": {
+        "total": 1,
+        "versions": {
+          "1.0.0": 1
+        }
+      },
+      "reviews": {
+        "url": "https://github.com/buchochelliq-labs/rs-rich-marketplace/discussions/14",
+        "up": 0,
+        "down": 0,
+        "comments": 0
+      }
+    },
+    "status": {
+      "downloads": {
+        "total": null,
+        "versions": {
+          "1.0.0": null
+        }
+      },
+      "reviews": {
+        "url": "https://github.com/buchochelliq-labs/rs-rich-marketplace/discussions/15",
+        "up": 0,
+        "down": 0,
+        "comments": 0
+      }
+    },
+    "textcase": {
+      "downloads": {
+        "total": 1,
+        "versions": {
+          "0.2.0": 1,
+          "0.1.0": null
+        }
+      },
+      "reviews": {
+        "url": "https://github.com/buchochelliq-labs/rs-rich-marketplace/discussions/16",
+        "up": 0,
+        "down": 0,
+        "comments": 0
+      }
+    },
+    "wordplay": {
+      "downloads": {
+        "total": 1,
+        "versions": {
+          "0.1.0": 1
+        }
+      },
+      "reviews": {
+        "url": "https://github.com/buchochelliq-labs/rs-rich-marketplace/discussions/17",
+        "up": 0,
+        "down": 0,
+        "comments": 0
+      }
+    }
+  }
+}
