@@ -25,6 +25,35 @@
   },
   "versions": [
     {
+      "version": "0.0.6",
+      "published": "2026-10-27",
+      "requires": {
+        "plugin_api": 1
+      },
+      "artifact": {
+        "url": "https://static.crates.io/crates/rs-rich-diagram/rs-rich-diagram-0.0.6.crate",
+        "sha256": "84ecf97a28a904c6d7da454a6727da188c67074ec47ca33d68aa75293d91f30d",
+        "size": 60507
+      },
+      "capabilities": [
+        {
+          "kind": "fence-renderer",
+          "name": "dot"
+        },
+        {
+          "kind": "fence-renderer",
+          "name": "graphviz"
+        },
+        {
+          "kind": "renderer",
+          "name": "dot"
+        }
+      ],
+      "permissions": [
+        "native-code"
+      ]
+    },
+    {
       "version": "0.0.5",
       "published": "2026-10-26",
       "requires": {
