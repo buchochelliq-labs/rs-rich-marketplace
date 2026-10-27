@@ -285,7 +285,8 @@ async function browser() {
   let probing = false; // the CSP probes below log errors on purpose
   try {
     // mode: "ok", "unsigned" (index.json is a 404), "down" (refused),
-    // "no-stats", "hostile" (a listing that claims to be rs-rich's).
+    // "no-stats", "slow-stats" (stats.json never answers), "hostile" (a
+    // listing that claims to be rs-rich's).
     async function open(mode, hash = "", scheme = "light", viewport = { width: 1280, height: 900 }) {
       const context = await chrome.newContext({ permissions: ["clipboard-read", "clipboard-write"], colorScheme: scheme, viewport });
       await context.addInitScript(RECORD_CSP);
@@ -313,6 +314,7 @@ async function browser() {
         }
         if (url === STATS) {
           sent.push({ url, headers: route.request().headers() });
+          if (mode === "slow-stats") return new Promise(() => {});
           if (mode === "no-stats") return route.fulfill({ status: 404, body: "404: Not Found", headers: { "access-control-allow-origin": "*" } });
           const body = JSON.parse(readFileSync(path.join(FIXTURE, "stats.json"), "utf8"));
           if (mode === "hostile") {
@@ -325,7 +327,7 @@ async function browser() {
         return route.abort();
       });
       const page = await context.newPage();
-      const expected = mode === "down" || mode === "unsigned" || mode === "no-stats";
+      const expected = mode === "down" || mode === "unsigned" || mode === "no-stats" || mode === "slow-stats";
       page.on("console", (m) => m.type() === "error" && !expected && !probing && errors.push(`${mode}: ${m.text()}`));
       page.on("pageerror", (e) => errors.push(`${mode}: ${e}`));
       await page.goto(`${base}${hash}`);
@@ -490,6 +492,13 @@ async function browser() {
     same(await cards(page).count(), 16, "the page works without stats.json");
     check((await page.locator("#textcase .mkt-stats").textContent()).startsWith("— downloads"), "counts show —");
     check((await page.locator(".mkt-meta").textContent()).includes("not available"), "and it says so");
+    await context.close();
+
+    // A stats request that never answers holds nothing back.
+    ({ page, context } = await open("slow-stats"));
+    await page.locator(".mkt-card").first().waitFor({ timeout: 20000 });
+    same(await cards(page).count(), 16, "the listings show when stats.json stalls");
+    check((await page.locator("#textcase .mkt-stats").textContent()).startsWith("— downloads"), "with — for the counts");
     await context.close();
 
     // Before the first index.

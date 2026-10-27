@@ -350,8 +350,19 @@
     return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
   }
 
-  async function fetchJson(url) {
-    const response = await fetch(url, FETCH);
+  // The stats are optional and come from another host: give up on them
+  // after this long, so a stalled request never holds the listings back.
+  const STATS_TIMEOUT_MS = 8000;
+
+  async function fetchJson(url, timeoutMs = 0) {
+    const abort = timeoutMs > 0 ? new AbortController() : null;
+    const timer = abort ? setTimeout(() => abort.abort(), timeoutMs) : 0;
+    let response;
+    try {
+      response = await fetch(url, abort ? { ...FETCH, signal: abort.signal } : FETCH);
+    } finally {
+      clearTimeout(timer);
+    }
     if (!response.ok) {
       const error = new Error(`${response.status} ${response.statusText}`);
       error.status = response.status;
@@ -401,7 +412,7 @@
 
   async function loadStats(url) {
     try {
-      return Logic.readStats(parse(await fetchJson(url)));
+      return Logic.readStats(parse(await fetchJson(url, STATS_TIMEOUT_MS)));
     } catch (e) {
       return null;
     }
