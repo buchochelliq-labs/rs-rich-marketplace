@@ -6,14 +6,18 @@ reads. The format, the trust rules and the tiers are rs-rich-cli's
 [marketplace design note](https://github.com/buchochelliq-labs/rs-rich-cli/blob/main/docs/design/marketplace.md);
 this file says how to use the repository.
 
-**Browse it on the web:** the docs site's
-[Marketplace page](https://buchochelliq-labs.github.io/rs-rich-cli/latest/marketplace/)
+**Browse it on the web:
+[buchochelliq-labs.github.io/rs-rich-marketplace](https://buchochelliq-labs.github.io/rs-rich-marketplace/)**
 searches and filters this index in the browser (by kind, tier and
-recommended; official packages are marked), and links each package to its
-install command and its reviews. It ships with rs-rich-cli 0.0.23; until
-that release is out, main's docs have it at
-[`/dev/marketplace/`](https://buchochelliq-labs.github.io/rs-rich-cli/dev/marketplace/).
-The rest of the documentation is at
+recommended; official packages are marked), and gives each package its
+install command, its downloads and reviews, and links to its listing, its
+source and its Reviews discussion. It is only a viewer: `rich plugin
+install` verifies the index's signature before it installs anything.
+The docs site has the same search on its
+[Marketplace page](https://buchochelliq-labs.github.io/rs-rich-cli/latest/marketplace/)
+(from rs-rich-cli 0.0.23; until that release is out, main's docs have it at
+[`/dev/marketplace/`](https://buchochelliq-labs.github.io/rs-rich-cli/dev/marketplace/)),
+and the rest of the documentation is at
 [buchochelliq-labs.github.io/rs-rich-cli](https://buchochelliq-labs.github.io/rs-rich-cli/).
 
 ```bash
@@ -32,6 +36,7 @@ rich plugin install textcase       # shows tier, permissions, capabilities; asks
 | `artifacts/ID/ID-VERSION.EXT` | Files this repository hosts itself (the official WASM plugins, micro packs and themes). Each version since the themes is served as a release asset, `https://github.com/buchochelliq-labs/rs-rich-marketplace/releases/download/ID-vVERSION/ID-VERSION.EXT`, one release per version; the first ones keep their `https://raw.githubusercontent.com/buchochelliq-labs/rs-rich-marketplace/main/artifacts/...` URLs, since a listed version never changes. Never edited once listed. |
 | `scripts/` | The index builder, the pull request's artifact check, `add_crate_version.py`, and the release, stats and discussion scripts the workflows run. |
 | `schemas/stats.schema.json` | The schema of `stats.json` on the `stats` branch. |
+| `site/` | The web site's search page, its script, styles and fonts. `pages.yml` publishes it with the signed index, its signature, `keys/` and the listings the index signed (`scripts/build_site.py`); `site-check.yml` tests it in a browser (`scripts/check_site.mjs`). |
 
 Four kinds are listed: a `wasm-plugin`, a `micro-pack` and a `theme`
 install with `rich plugin install`; a `crate` is listed only, and `install`
@@ -202,6 +207,11 @@ post are counted, once a night.
    `tier-approved`: it lets a pull request through the name check above.
 7. **Create the `recommended-approved` label** too: it lets a pull request
    add, change or remove a listing's `recommended`.
+8. **Turn on Pages:** Settings > Pages > Build and deployment > Source:
+   **GitHub Actions**. Then run **Pages** once by hand (Actions > Pages >
+   Run workflow); after that it runs on every push to main that changes
+   `site/`, the index, its signature or `keys/`, the signer's commits
+   included.
 
 GitHub pauses scheduled workflows in a repository with no activity for 60
 days; re-enable "Stats" under Actions if that happens.
@@ -210,6 +220,10 @@ days; re-enable "Stats" under Actions if that happens.
 
 - `python3 -m unittest discover -s scripts -p 'test_*.py'` tests the scripts.
 - `python3 scripts/check_artifacts.py --all` checks every listed artifact.
+- `node scripts/check_site.mjs` checks the web site in headless Chromium
+  (Node 22 and Playwright); `--screenshots DIR` also saves it, with the
+  live stats. `python3 scripts/build_site.py --output DIR` builds it as
+  Pages serves it.
 - `python3 scripts/publish_releases.py --dry-run` (with a `GITHUB_TOKEN`)
   says which releases are missing.
 - Signing, the protected `marketplace-signing` environment, the deploy key
