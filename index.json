@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "serial": 1,
-  "generated": "2026-10-26T23:01:39Z",
-  "expires": "2026-11-25T23:01:39Z",
+  "serial": 2,
+  "generated": "2026-11-01T21:57:23Z",
+  "expires": "2026-12-01T21:57:23Z",
   "listings": {
     "dev": {
       "path": "packages/dev.json",
@@ -10,7 +10,7 @@
     },
     "dot": {
       "path": "packages/dot.json",
-      "sha256": "13026981b0db50c7d6d8ce06906c0d8707b46ef36c3c10dcc18c174e822cabd6"
+      "sha256": "1126da24fd6744225995d71181e79983519f1522a6d3c874575d9f79a28dea3a"
     },
     "dusk": {
       "path": "packages/dusk.json",
@@ -26,11 +26,11 @@
     },
     "lumis": {
       "path": "packages/lumis.json",
-      "sha256": "e01bcd105b72d1292a6698fafed0918fe996f8b8eb9fdc93f648ad3c6a27e113"
+      "sha256": "b0f13585b88b81d98fadca54838313c8852dfac4ae16a0e49ed021cd7580235f"
     },
     "mermaid": {
       "path": "packages/mermaid.json",
-      "sha256": "d41060b0e7856ed23991175bacbbd7c1628437131caa0a9e405900a5d6bdd705"
+      "sha256": "5e12171e0b15ada5a065d3f46769c8006393d3a09cd05d378ac3ee66978d1568"
     },
     "mono": {
       "path": "packages/mono.json",
