@@ -226,7 +226,7 @@ days; re-enable "Stats" under Actions if that happens.
   Pages serves it.
 - `python3 scripts/publish_releases.py --dry-run` (with a `GITHUB_TOKEN`)
   says which releases are missing.
-- Signing, the protected `marketplace-signing` environment, the deploy key
+- Signing, the protected `marketplace-signing` environment, the GitHub App
   that pushes the signed index and key rotation are in rs-rich-cli's
   [`docs/marketplace-repo/README.md`](https://github.com/buchochelliq-labs/rs-rich-cli/blob/main/docs/marketplace-repo/README.md),
   which also keeps a copy of this repository's workflows and scripts.
