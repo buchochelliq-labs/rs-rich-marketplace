@@ -44,6 +44,11 @@ prints its `cargo add` line instead.
 
 ## Submitting a listing
 
+Writing your first plugin? rs-rich-cli's issue
+[Write the first community plugin](https://github.com/buchochelliq-labs/rs-rich-cli/issues/831)
+is the place to start: it links the template and the guide, and is where
+to ask questions and say what was hard.
+
 1. **Host the file** where it will stay: a release asset of your
    repository, over `https://`. A listed version never changes, so neither
    may the file.
