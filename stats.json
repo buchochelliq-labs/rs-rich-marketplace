@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-01T10:46:53Z",
+  "generated_at": "2026-11-02T11:39:17Z",
   "repository": "buchochelliq-labs/rs-rich-marketplace",
   "packages": {
     "dev": {
@@ -19,9 +19,9 @@
     },
     "dot": {
       "downloads": {
-        "total": 72,
+        "total": 87,
         "versions": {
-          "0.0.6": 26,
+          "0.0.6": 41,
           "0.0.5": 46
         }
       },
@@ -76,9 +76,9 @@
     },
     "lumis": {
       "downloads": {
-        "total": 47,
+        "total": 61,
         "versions": {
-          "0.0.7": 18,
+          "0.0.7": 32,
           "0.0.6": 29
         }
       },
@@ -91,9 +91,9 @@
     },
     "mermaid": {
       "downloads": {
-        "total": 62,
+        "total": 77,
         "versions": {
-          "0.0.9": 22,
+          "0.0.9": 37,
           "0.0.8": 40
         }
       },
