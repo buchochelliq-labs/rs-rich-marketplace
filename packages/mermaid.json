@@ -22,6 +22,34 @@
   },
   "versions": [
     {
+      "version": "0.0.10",
+      "published": "2026-11-03",
+      "requires": {
+        "plugin_api": 1
+      },
+      "artifact": {
+        "url": "https://static.crates.io/crates/rs-rich-mermaid/rs-rich-mermaid-0.0.10.crate",
+        "sha256": "2c62ea977949f2beb09936260666f8ebec204aac965bd29258da53e7fb4262d8",
+        "size": 50265
+      },
+      "capabilities": [
+        {
+          "kind": "fence-renderer",
+          "name": "mermaid"
+        },
+        {
+          "kind": "renderer",
+          "name": "mermaid"
+        }
+      ],
+      "permissions": [
+        "native-code",
+        "filesystem-read",
+        "filesystem-write",
+        "process"
+      ]
+    },
+    {
       "version": "0.0.9",
       "published": "2026-10-27",
       "requires": {
