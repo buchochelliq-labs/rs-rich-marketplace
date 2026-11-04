@@ -21,6 +21,27 @@
   },
   "versions": [
     {
+      "version": "0.0.8",
+      "published": "2026-11-03",
+      "requires": {
+        "plugin_api": 1
+      },
+      "artifact": {
+        "url": "https://static.crates.io/crates/rs-rich-lumis/rs-rich-lumis-0.0.8.crate",
+        "sha256": "3e19df877a00e6e4248772199afd12c2715037e403316c31512e3079c46cbc38",
+        "size": 19463
+      },
+      "capabilities": [
+        {
+          "kind": "code-highlighter",
+          "name": "lumis"
+        }
+      ],
+      "permissions": [
+        "native-code"
+      ]
+    },
+    {
       "version": "0.0.7",
       "published": "2026-10-27",
       "requires": {
